@@ -3,6 +3,7 @@ from typing import List, Optional, Dict, Any
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
+from chromadb.config import Settings
 
 
 class AviationVectorStore:
@@ -50,10 +51,17 @@ class AviationVectorStore:
                 f"no vector store at {self.persist_dir}. run create_vector_store first"
             )
 
+        # chromadb settings for faster initialization
+        chroma_settings = Settings(
+            anonymized_telemetry=False,
+            allow_reset=False
+        )
+
         self.vector_store = Chroma(
             persist_directory=str(self.persist_dir),
             embedding_function=self.embeddings,
-            collection_name=self.collection_name
+            collection_name=self.collection_name,
+            client_settings=chroma_settings
         )
 
         return self.vector_store
@@ -75,6 +83,22 @@ class AviationVectorStore:
             filter=filter
         )
 
+    def similarity_search_with_score(
+        self,
+        query: str,
+        k: int = 5,
+        filter: Optional[Dict[str, Any]] = None
+    ) -> List[tuple[Document, float]]:
+        """search with similarity scores for visualization purposes"""
+        if self.vector_store is None:
+            raise RuntimeError("vector store not initialized")
+
+        return self.vector_store.similarity_search_with_score(
+            query=query,
+            k=k,
+            filter=filter
+        )
+
     def get_retriever(self, k: int = 5):
         """Return LangChain retriever interface for RAG chain integration."""
         if self.vector_store is None:
@@ -87,7 +111,7 @@ class AviationVectorStore:
 
 
 if __name__ == "__main__":
-    from document_loader import AviationDocumentLoader
+    from src.document_loader import AviationDocumentLoader
 
     # test: load docs and create vector store
     loader = AviationDocumentLoader()
