@@ -1,9 +1,9 @@
 from pathlib import Path
 from typing import List, Optional, Dict, Any
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
 from langchain_core.documents import Document
-from chromadb.config import Settings
+import chromadb
 
 
 class AviationVectorStore:
@@ -30,18 +30,27 @@ class AviationVectorStore:
         # ensure persistence directory exists
         self.persist_dir.mkdir(parents=True, exist_ok=True)
 
-        print(f"Embedding {len(documents)} chunks...")
-        print("This takes ~30 seconds on first run, then cached to disk")
+        print(f"Creating vector store:")
+        print(f"  persist_directory: {self.persist_dir}")
+        print(f"  collection_name: {self.collection_name}")
+        print(f"  documents: {len(documents)} chunks")
+
+        # use persistent client for reliable storage
+        client = chromadb.PersistentClient(path=str(self.persist_dir))
 
         # chromadb handles batching internally for large document sets
         self.vector_store = Chroma.from_documents(
             documents=documents,
             embedding=self.embeddings,
-            persist_directory=str(self.persist_dir),
+            client=client,
             collection_name=self.collection_name
         )
 
+        # verify chunks were stored
+        stored_count = self.vector_store._collection.count()
+        print(f"Verified: {stored_count} chunks stored")
         print(f"Vector store created: {self.persist_dir}")
+
         return self.vector_store
 
     def load_existing(self) -> Chroma:
@@ -51,18 +60,26 @@ class AviationVectorStore:
                 f"no vector store at {self.persist_dir}. run create_vector_store first"
             )
 
-        # chromadb settings for faster initialization
-        chroma_settings = Settings(
-            anonymized_telemetry=False,
-            allow_reset=False
-        )
+        print(f"Loading vector store:")
+        print(f"  persist_directory: {self.persist_dir}")
+        print(f"  collection_name: {self.collection_name}")
+
+        # use persistent client to load from disk
+        client = chromadb.PersistentClient(path=str(self.persist_dir))
 
         self.vector_store = Chroma(
-            persist_directory=str(self.persist_dir),
+            client=client,
             embedding_function=self.embeddings,
-            collection_name=self.collection_name,
-            client_settings=chroma_settings
+            collection_name=self.collection_name
         )
+
+        # verify collection loaded successfully
+        loaded_count = self.vector_store._collection.count()
+        print(f"Loaded: {loaded_count} chunks")
+
+        if loaded_count == 0:
+            print("WARNING: Collection loaded but contains 0 chunks")
+            print("This may indicate a persistence issue")
 
         return self.vector_store
 

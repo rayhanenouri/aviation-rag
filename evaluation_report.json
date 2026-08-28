@@ -1,0 +1,56 @@
+{
+  "evaluation_framework": "DeepEval",
+  "questions_evaluated": 10,
+  "in_scope_questions": 9,
+  "adversarial_queries": 1,
+  "documents_indexed": 2,
+  "chunks_in_store": 220,
+  "llm_model": "groq/gpt-oss-120b",
+  "judge_model": "groq/gpt-oss-120b",
+  "embedding_model": "all-MiniLM-L6-v2",
+  "metrics": {
+    "faithfulness": 0.8,
+    "answer_relevancy": 0.85,
+    "contextual_precision": 0.454,
+    "overall_rag_score": 0.701
+  },
+  "adversarial_test": "PASSED",
+  "detailed_scores": {
+    "faithfulness_per_question": [
+      1.0,
+      1.0,
+      1.0,
+      0.0,
+      1.0,
+      1.0,
+      0.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "relevancy_per_question": [
+      1.0,
+      0.5,
+      0.5,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      0.5,
+      1.0
+    ],
+    "precision_per_question": [
+      0,
+      0,
+      0.756,
+      0.583,
+      1.0,
+      1.0,
+      0,
+      0.7,
+      0.5,
+      0
+    ]
+  }
+}
